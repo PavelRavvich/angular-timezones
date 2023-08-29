@@ -28,7 +28,7 @@ export class ListComponent implements OnInit, OnDestroy {
     readonly storageService: CookieStorageService,
   ) {
     this.apiService.getTimezones()
-      .subscribe((timezones: string[]) => this.timezones = timezones);
+      .subscribe((data: string[]) => this.allTimezones = data);
   }
 
   public displayedColumns: string[] = [
@@ -40,26 +40,26 @@ export class ListComponent implements OnInit, OnDestroy {
   ];
 
   public data: any[] = [];
-  public timezones: string[] = [];
+  public allTimezones: string[] = [];
   private subscriptions: Subscription[] = [];
   private currentTimezone: string | null = null;
 
   ngOnInit(): void {
     this.subscribeToDataStreams();
-    this.loadTimezonesFromCookie();
+    this.subscribeTimezonesFromCookies();
     this.subscribeToCurrentTimezone();
   }
 
-  private loadTimezonesFromCookie(): void {
+  private subscribeTimezonesFromCookies(): void {
     const storedTimezones = this.storageService
       .getCookie(CookieStorageService.TIMEZONES_COOKIE_KEY);
     if (storedTimezones) {
-      const timezonesArray: string[] = JSON.parse(storedTimezones);
-      timezonesArray.forEach(zone => {
+      const timezones: string[] = JSON.parse(storedTimezones);
+      timezones.forEach(timezone => {
         this.subscriptions.push(
-          this.updateTimeStream(this.apiService.getDateTime(zone)).subscribe()
+          this.updateTimeStream(this.apiService.getDateTime(timezone)).subscribe()
         );
-        if (zone === this.currentTimezone) {
+        if (timezone === this.currentTimezone) {
           this.currentTimezone = null;
         }
       });
@@ -129,16 +129,17 @@ export class ListComponent implements OnInit, OnDestroy {
   }
 
   public openAddDialog(): void {
-    const existedTimezones = this.data.map(item => item.timezone);
-    const timezones = this.timezones
-      .filter(timezone => !existedTimezones.includes(timezone));
+    const subTimezones = this.data.map(item => item.timezone);
+    const noSubTimezones = this.allTimezones.filter(
+      timezone => !subTimezones.includes(timezone)
+    );
     this.subscriptions.push(
       this.dialog
         .open(AddDialogComponent, {
           width: '400px',
           autoFocus: false,
           disableClose: true,
-          data: { timezones }
+          data: { timezones: noSubTimezones }
         })
         .afterClosed()
         .subscribe((timezone: string) => {
