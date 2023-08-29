@@ -1,0 +1,155 @@
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import {
+  map,
+  tap,
+  take,
+  repeat,
+  interval,
+  switchMap,
+  Subscription, Observable,
+} from "rxjs";
+import { MatDialog } from "@angular/material/dialog";
+import { AddDialogComponent } from "@app/modules/timezone/components";
+
+import { CookieStorageService } from "@app/core";
+import { ApiService } from "../../services";
+import { incrementTime } from "../../helpers";
+
+@Component({
+  selector: 'app-list',
+  templateUrl: './list.component.html',
+  styleUrls: ['./list.component.css']
+})
+export class ListComponent implements OnInit, OnDestroy {
+
+  constructor(
+    readonly dialog: MatDialog,
+    readonly apiService: ApiService,
+    readonly storageService: CookieStorageService,
+  ) {
+    this.apiService.getTimezones()
+      .subscribe((timezones: string[]) => this.timezones = timezones);
+  }
+
+  public displayedColumns: string[] = [
+    'fullName',
+    'shortName',
+    'localTime',
+    'localDate',
+    'summertime',
+  ];
+
+  public data: any[] = [];
+  public timezones: string[] = [];
+  private subscriptions: Subscription[] = [];
+  private currentTimezone: string | null = null;
+
+  ngOnInit(): void {
+    this.subscribeToDataStreams();
+    this.loadTimezonesFromCookie();
+    this.subscribeToCurrentTimezone();
+  }
+
+  private loadTimezonesFromCookie(): void {
+    const storedTimezones = this.storageService
+      .getCookie(CookieStorageService.TIMEZONES_COOKIE_KEY);
+    if (storedTimezones) {
+      const timezonesArray: string[] = JSON.parse(storedTimezones);
+      timezonesArray.forEach(zone => {
+        this.subscriptions.push(
+          this.updateTimeStream(this.apiService.getDateTime(zone)).subscribe()
+        );
+        if (zone === this.currentTimezone) {
+          this.currentTimezone = null;
+        }
+      });
+    }
+  }
+
+  private subscribeToDataStreams(): void {
+    this.apiService.data$.subscribe(data => this.updateData(data));
+  }
+
+  private subscribeToCurrentTimezone(): void {
+    if (!this.currentTimezone) {
+      this.subscriptions.push(
+        this.apiService.getCurrentDateTime().pipe(
+          tap(data => this.currentTimezone = data.timezone)
+        ).subscribe()
+      );
+    }
+  }
+
+  public addTimezone(zone: string): void {
+    this.subscriptions.push(
+      this.updateTimeStream(this.apiService.getDateTime(zone)).subscribe()
+    );
+    this.updateTimezonesCookie(zone);
+  }
+
+  private updateTimezonesCookie(zone: string): void {
+    const timezonesArray = this.data.map(item => item.timezone);
+    const serializedData = JSON.stringify([...timezonesArray, zone]);
+    this.storageService.setCookie(CookieStorageService.TIMEZONES_COOKIE_KEY, serializedData);
+  }
+
+  private updateTimeStream(apiCall: Observable<any>): Observable<any> {
+    let currentData: any;
+    return apiCall.pipe(
+      tap(data => {
+        this.updateData(data);
+        currentData = data;
+      }),
+      switchMap(() =>
+        interval(1000).pipe(
+          take(60),
+          map(() => incrementTime(currentData, 1)),
+          tap(updatedData => {
+            this.updateData(updatedData);
+            currentData = updatedData;
+          })
+        )
+      ),
+      repeat()
+    );
+  }
+
+  private updateData(newData: any): void {
+    const index = this.data.findIndex(item => item.timezone === newData.timezone);
+    if (index !== -1) {
+      this.data[index] = newData;
+    } else {
+      if (newData.timezone === this.currentTimezone) {
+        this.data.unshift(newData);
+      } else {
+        this.data.push(newData);
+      }
+    }
+    this.data = [...this.data];
+  }
+
+  public openAddDialog(): void {
+    const existedTimezones = this.data.map(item => item.timezone);
+    const timezones = this.timezones
+      .filter(timezone => !existedTimezones.includes(timezone));
+    this.subscriptions.push(
+      this.dialog
+        .open(AddDialogComponent, {
+          width: '400px',
+          autoFocus: false,
+          disableClose: true,
+          data: { timezones }
+        })
+        .afterClosed()
+        .subscribe((timezone: string) => {
+          if (timezone) {
+            this.addTimezone(timezone);
+          }
+        })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+}

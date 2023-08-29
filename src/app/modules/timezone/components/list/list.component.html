@@ -1,0 +1,41 @@
+<button (click)="openAddDialog()" mat-flat-button color="primary">Add</button>
+
+<table mat-table [dataSource]="data" class="mat-elevation-z0">
+  <ng-container matColumnDef="fullName">
+    <th mat-header-cell *matHeaderCellDef>Time zone</th>
+    <td mat-cell *matCellDef="let item">
+      {{item | dateTimeFormat: 'fullName'}}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="shortName">
+    <th mat-header-cell *matHeaderCellDef>Short name (Shift)</th>
+    <td mat-cell *matCellDef="let item">
+      {{item | dateTimeFormat: 'shortName'}}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="localTime">
+    <th mat-header-cell *matHeaderCellDef>Local time</th>
+    <td mat-cell *matCellDef="let item">
+      {{item | dateTimeFormat: 'localTime'}}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="localDate">
+    <th mat-header-cell *matHeaderCellDef>Local date</th>
+    <td mat-cell *matCellDef="let item">
+      {{item | dateTimeFormat: 'localDate'}}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="summertime">
+    <th mat-header-cell *matHeaderCellDef>Summertime</th>
+    <td mat-cell *matCellDef="let item">
+      {{item | dateTimeFormat: 'summertime'}}
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+</table>
