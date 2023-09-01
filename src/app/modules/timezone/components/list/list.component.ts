@@ -29,7 +29,9 @@ export class ListComponent implements OnInit, OnDestroy {
     readonly cdr: ChangeDetectorRef,
     readonly apiService: ApiService,
     readonly storageService: CookieStorageService,
-  ) {}
+  ) {
+    setInterval(() => cdr.detectChanges(), 1000);
+  }
 
   public displayedColumns: string[] = [
     'fullName',
@@ -98,7 +100,6 @@ export class ListComponent implements OnInit, OnDestroy {
       this.data.push(newData);
     }
     this.data = [...this.data];
-    this.cdr.detectChanges();
   }
 
   public openAddDialog(): void {
