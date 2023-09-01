@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import {
+  OnInit,
+  OnDestroy,
+  Component,
+  ChangeDetectorRef,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import {
   map,
   tap,
@@ -10,11 +16,14 @@ import {
   Subscription,
 } from "rxjs";
 import { MatDialog } from "@angular/material/dialog";
+
+import { incrementTime } from "../../helpers";
+
 import { AddDialogComponent } from "@app/modules/timezone/components";
 
 import { CookieStorageService } from "@app/core";
 import { ApiService } from "../../services";
-import { incrementTime } from "../../helpers";
+
 
 @Component({
   selector: 'app-list',
