@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import {
   map,
   tap,
@@ -19,12 +19,14 @@ import { incrementTime } from "../../helpers";
 @Component({
   selector: 'app-list',
   templateUrl: './list.component.html',
-  styleUrls: ['./list.component.css']
+  styleUrls: ['./list.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush, // not call rendering for each Observable change
 })
 export class ListComponent implements OnInit, OnDestroy {
 
   constructor(
     readonly dialog: MatDialog,
+    readonly cdr: ChangeDetectorRef,
     readonly apiService: ApiService,
     readonly storageService: CookieStorageService,
   ) {}
@@ -96,6 +98,7 @@ export class ListComponent implements OnInit, OnDestroy {
       this.data.push(newData);
     }
     this.data = [...this.data];
+    this.cdr.detectChanges();
   }
 
   public openAddDialog(): void {
@@ -131,7 +134,7 @@ export class ListComponent implements OnInit, OnDestroy {
   }
 
   public trackByFn(index: number, item: any): string {
-    return item.fullName;
+    return item.fullName; // not rerender full item if fullName not changed
   }
 
   ngOnDestroy(): void {
