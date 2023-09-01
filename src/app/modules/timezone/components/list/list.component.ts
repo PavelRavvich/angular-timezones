@@ -130,6 +130,10 @@ export class ListComponent implements OnInit, OnDestroy {
     this.storageService.setCookie(CookieStorageService.TIMEZONES_COOKIE_KEY, serializedData);
   }
 
+  public trackByFn(index: number, item: any): string {
+    return item.fullName;
+  }
+
   ngOnDestroy(): void {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
