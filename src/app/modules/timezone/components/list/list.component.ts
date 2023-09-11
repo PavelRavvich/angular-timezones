@@ -77,19 +77,20 @@ export class ListComponent implements OnInit, OnDestroy {
   }
 
   public subscribeTimezone(timezone: string): void {
-    let currentData: any;
+    let current: any;
+    const update = (updatedData: any) => {
+      this.updateData(updatedData);
+      current = updatedData;
+    };
     this.subscriptions.push(
       this.apiService.getDateTime(timezone)
         .pipe(
-          tap(data => currentData = data),
+          tap(data => current = data),
           switchMap(() =>
             interval(1000).pipe(
               take(60),
-              map(() => incrementTime(currentData, 1)),
-              tap(updatedData => {
-                this.updateData(updatedData);
-                currentData = updatedData;
-              })
+              map(() => incrementTime(current, 1)),
+              tap(newData => update(newData))
             )
           ),
           repeat()
