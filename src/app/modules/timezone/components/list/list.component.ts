@@ -81,10 +81,7 @@ export class ListComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.apiService.getDateTime(timezone)
         .pipe(
-          tap(data => {
-            this.updateData(data);
-            currentData = data;
-          }),
+          tap(data => currentData = data),
           switchMap(() =>
             interval(1000).pipe(
               take(60),
